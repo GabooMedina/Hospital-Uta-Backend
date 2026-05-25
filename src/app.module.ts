@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
+import { UciModule } from './modules/uci/uci.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AdminModule } from './admin/admin.module';
     }),
     AuthModule,
     AdminModule,
+    UciModule,
   ],
   controllers: [AppController],
   providers: [AppService],
