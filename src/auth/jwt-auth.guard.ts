@@ -31,6 +31,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 }
 
-// 2. EL GUARD (AQUÍ TE FALTABA EL EXPORT)
+// 2. EL GUARD 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {}

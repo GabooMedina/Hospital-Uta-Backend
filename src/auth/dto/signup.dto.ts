@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsNumber, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class SignUpDto {
   @ApiProperty({ 
@@ -31,4 +31,20 @@ export class SignUpDto {
   })
   @IsNumber({}, { message: 'El rol_id debe ser un número válido' })
   rol_id!: number;
+
+  // 🚀 NUEVOS METADATOS COMPUESTOS (CAMPOS ENLAZADOS AL TRIGGER PL/pgSQL)
+  @ApiProperty({ example: '8vo', required: false })
+  @IsString()
+  @IsOptional()
+  semestre?: string;
+
+  @ApiProperty({ example: 'A', required: false })
+  @IsString()
+  @IsOptional()
+  paralelo?: string;
+
+  @ApiProperty({ example: 'Enfermería Crítica', required: false })
+  @IsString()
+  @IsOptional()
+  materia?: string; 
 }

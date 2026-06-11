@@ -4,16 +4,20 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
-import { UciModule } from './modules/uci/uci.module';
+import { RoomsModule } from './modules/rooms/rooms.module';
+import { EquipmentModule } from './modules/equipment/equipment.module';
+import { StudentsModule } from './modules/students/students.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Esto hace que el .env esté disponible en todo el proyecto
+      isGlobal: true, 
     }),
     AuthModule,
     AdminModule,
-    UciModule,
+    RoomsModule,
+    EquipmentModule,
+    StudentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

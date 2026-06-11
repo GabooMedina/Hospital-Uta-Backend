@@ -39,7 +39,7 @@ export class AuthController {
     async resetPassword(
         @Body() resetPasswordDto: ResetPasswordDto,
         @Headers('authorization') authHeader: string,
-        @Headers('x-refresh-token') refreshToken: string // Capturamos el refresh token
+        @Headers('x-refresh-token') refreshToken: string
     ) {
         if (!authHeader || !authHeader.startsWith('Bearer ') || !refreshToken) {
             throw new UnauthorizedException('Componentes de autenticación incompletos');
@@ -47,17 +47,14 @@ export class AuthController {
 
         const accessToken = authHeader.replace('Bearer ', '').trim();
 
-        // Enviamos ambos tokens listos al servicio
         return this.authService.updatePassword(resetPasswordDto.newPassword, accessToken, refreshToken);
     }
 
-    @UseGuards(JwtAuthGuard) // Requerimos el token para saber quién cierra sesión
+    @UseGuards(JwtAuthGuard) 
     @Post('logout')
     @ApiOperation({ summary: 'Cerrar sesión en la plataforma e invalidar token' })
     @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
     async logout() {
-        // Aquí puedes ejecutar lógica en tu authService si deseas registrar auditoría
-        // return this.authService.logout(user.id);
         return { 
             statusCode: 200, 
             message: 'Sesión cerrada correctamente en el servidor' 
