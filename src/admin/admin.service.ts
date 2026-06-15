@@ -12,7 +12,9 @@ export class AdminService {
         );
     }
 
-    // Listar todos los usuarios del sistema para la auditoría de rangos
+    /**
+     * Listar los docentes del sistema ordenados cronológicamente
+     */
     async findAllUsuarios() {
         const { data, error } = await this.supabase
             .from('usuarios')
@@ -21,48 +23,62 @@ export class AdminService {
                 nombres, 
                 apellidos, 
                 correo, 
+                estado, 
                 roles ( nombre )
-            `);
+            `)
+            .eq('rol_id', 2)
+            .order('created_at', { ascending: false }); 
 
         if (error) {
             throw new BadRequestException(error.message);
         }
 
-        return data.map(u => ({
-            id: u.id,
-            nombre: `${u.nombres} ${u.apellidos}`,
-            correo: u.correo,
-            rol: u.roles ? (u.roles as any).nombre : 'Estudiante'
-        }));
+        return data.map(u => {
+            let nombreRol = 'Docente';
+            if (u.roles) {
+                nombreRol = Array.isArray(u.roles) 
+                    ? u.roles[0]?.nombre 
+                    : (u.roles as any).nombre;
+            }
+
+            return {
+                id: u.id,
+                nombre: `${u.nombres} ${u.apellidos}`,
+                correo: u.correo,
+                estado: u.estado || 'activo', 
+                rol: nombreRol
+            };
+        });
     }
 
-    // Motor de consistencia relacional para alteración de privilegios
+    
     async toggleUserRole(id: string, nuevoRol: string) {
-        const rolIdTarget = nuevoRol === 'Docente' ? 2 : 3; 
-
-        // 1. Actualizamos el rol en la tabla maestra 'usuarios'
-        const { error: roleError } = await this.supabase
+        // 1. Consultamos el estado actual del docente en la base de datos
+        const { data: usuarioActual, error: fetchError } = await this.supabase
             .from('usuarios')
-            .update({ rol_id: rolIdTarget })
-            .eq('id', id);
+            .select('estado')
+            .eq('id', id)
+            .single();
 
-        if (roleError) throw new BadRequestException(roleError.message);
-
-        // 2. Transacción de consistencia según tu modelo relacional
-        if (nuevoRol === 'Docente') {
-            // Si asciende a Docente, limpiamos su ficha estudiantil y creamos su registro docente
-            await this.supabase.from('detalles_estudiantes').delete().eq('usuario_id', id);
-            await this.supabase.from('detalles_docentes').upsert({ usuario_id: id });
-        } else {
-            // Si desciende a Estudiante, limpiamos su ficha docente e inicializamos su registro académico
-            await this.supabase.from('detalles_docentes').delete().eq('usuario_id', id);
-            await this.supabase.from('detalles_estudiantes').upsert({ 
-                usuario_id: id, 
-                semestre: '1er', 
-                paralelo: 'A' 
-            });
+        if (fetchError || !usuarioActual) {
+            throw new BadRequestException('No se pudo encontrar al docente en el sistema.');
         }
 
-        return { message: `Rol actualizado a ${nuevoRol} correctamente` };
+       
+        const proximoEstado = usuarioActual.estado === 'activo' ? 'pendiente' : 'activo';
+
+        // 3. Actualizamos únicamente la columna estado en la tabla maestra 'usuarios'
+        const { error: updateError } = await this.supabase
+            .from('usuarios')
+            .update({ estado: proximoEstado })
+            .eq('id', id);
+
+        if (updateError) throw new BadRequestException(updateError.message);
+
+        return { 
+            message: proximoEstado === 'activo' 
+                ? 'Docente aprobado y activado correctamente' 
+                : 'Acceso de Docente suspendido correctamente' 
+        };
     }
 }

@@ -15,7 +15,7 @@ export class AuthService {
     }
 
     /**
-     * Inicio de sesión (Sign-In)
+     * Inicio de sesión (Sign-In) con control relacional de aprobación para Docentes
      */
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
@@ -31,26 +31,39 @@ export class AuthService {
         const { data: userData, error: userError } = await this.supabase
             .from('usuarios')
             .select(`
-        nombres,
-        apellidos,
-        estado,
-        roles (
-          nombre
-        )
-      `)
+                nombres,
+                apellidos,
+                estado,
+                roles (
+                    nombre
+                )
+            `)
             .eq('id', authData.user.id)
             .single();
 
         if (userError || !userData) {
             throw new UnauthorizedException('Perfil de usuario no encontrado en el sistema');
         }
+
+        // Extraemos de forma segura el nombre del rol para evitar errores de lectura
+        const nombreRol = userData.roles ? (userData.roles as any).nombre : 'ESTUDIANTE';
+
+      
+        if (nombreRol.toUpperCase() === 'ESTUDIANTE') {
+            throw new UnauthorizedException('ACCESO_ESTUDIANTE_VR');
+        }
+
+        if (userData.estado && userData.estado.toLowerCase() === 'pendiente') {
+            throw new UnauthorizedException('CUENTA_DOCENTE_PENDIENTE');
+        }
+
         return {
             user: {
                 id: authData.user.id,
                 email: authData.user.email,
                 nombres: userData.nombres,
                 apellidos: userData.apellidos,
-                rol: userData.roles['nombre'], // Extraído del join con la tabla roles
+                rol: nombreRol,
                 estado: userData.estado
             },
             access_token: authData.session?.access_token,
@@ -58,25 +71,26 @@ export class AuthService {
         };
     }
 
-  /**
-     * Registro de usuarios (Sign-Up) - 
+    /**
+     * Registro de usuarios (Sign-Up) con inyección diferenciada de estados de seguridad
      */
     async signUp(signUpDto: SignUpDto) {
-        //Desestructuramos los campos extendidos mapeados desde el DTO
         const { email, password, nombres, apellidos, rol_id, semestre, paralelo, materia } = signUpDto;
+
+        const estadoInicial = Number(rol_id) === 2 ? 'pendiente' : 'activo';
 
         const { data, error } = await this.supabase.auth.signUp({
             email,
             password,
             options: {
-                //  TRANSFERENCIA DE METADATA EN TIEMPO REAL AL TRIGGER SQL
                 data: {
                     nombres,
                     apellidos,
                     rol_id,
+                    estado: estadoInicial, 
                     semestre: semestre || null,
                     paralelo: paralelo || null,
-                    materia: materia || null // Envía la materia real al procedimiento 'handle_new_user'
+                    materia: materia || null 
                 }
             }
         });
@@ -86,8 +100,11 @@ export class AuthService {
         }
 
         return {
-            message: 'Usuario creado exitosamente. Se ha enviado un correo de confirmación.',
-            uid: data.user?.id
+            message: estadoInicial === 'pendiente' 
+                ? 'Registro en revisión. Su cuenta estará en lista de espera hasta la aprobación del Administrador.'
+                : 'Usuario creado exitosamente. Se ha enviado un correo de confirmación.',
+            uid: data.user?.id,
+            estado: estadoInicial
         };
     }
     
@@ -101,29 +118,20 @@ export class AuthService {
         return { message: 'Se ha enviado un enlace de recuperación a tu correo.' };
     }
 
-  async updatePassword(newPassword: string, accessToken: string, refreshToken: string) {
-        const { data: sessionData, error: sessionError } = await this.supabase.auth.setSession({
+    async updatePassword(newPassword: string, accessToken: string, refreshToken: string) {
+        await this.supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
         });
-
-        if (sessionError) {
-            console.error(' Error de sincronización:', sessionError.message);
-            throw new UnauthorizedException(`Enlace inválido: ${sessionError.message}`);
-        }
-
-        console.log('Sesión restaurada temporalmente para:', sessionData.user?.email);
 
         const { error: updateError } = await this.supabase.auth.updateUser({
             password: newPassword
         });
 
         if (updateError) {
-            console.error(' Error al actualizar datos:', updateError.message);
             throw new BadRequestException(updateError.message);
         }
 
-        console.log('Contraseña cambiada con éxito.');
         return { message: 'Contraseña actualizada exitosamente.' };
     }
 }
