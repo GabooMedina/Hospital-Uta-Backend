@@ -54,7 +54,7 @@ export class EvaluationsService {
 
     if (evalError) throw new Error(evalError.message);
 
-    const result = [];
+    const result: any[] = [];
 
     for (const ev of evaluations) {
       const { data: questions, error: qError } = await this.supabase
