@@ -48,10 +48,10 @@ export class AuthService {
         // Extraemos de forma segura el nombre del rol para evitar errores de lectura
         const nombreRol = userData.roles ? (userData.roles as any).nombre : 'ESTUDIANTE';
 
-      
-        if (nombreRol.toUpperCase() === 'ESTUDIANTE') {
-            throw new UnauthorizedException('ACCESO_ESTUDIANTE_VR');
-        }
+        // Eliminado el bloqueo a estudiantes para que Unity reciba el token 200 OK
+        // if (nombreRol.toUpperCase() === 'ESTUDIANTE') {
+        //     throw new UnauthorizedException('ACCESO_ESTUDIANTE_VR');
+        // }
 
         if (userData.estado && userData.estado.toLowerCase() === 'pendiente') {
             throw new UnauthorizedException('CUENTA_DOCENTE_PENDIENTE');
@@ -67,6 +67,8 @@ export class AuthService {
                 estado: userData.estado
             },
             access_token: authData.session?.access_token,
+            token: authData.session?.access_token, // Para Unity C#
+            user_id: authData.user.id,             // Para Unity C#
             refresh_token: authData.session?.refresh_token,
         };
     }

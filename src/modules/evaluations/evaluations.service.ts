@@ -52,13 +52,36 @@ export class EvaluationsService {
     return evalData;
   }
 
-  // Obtener todas las evaluaciones (con sus preguntas sin las respuestas correctas para los estudiantes)
-  // TODO: Podríamos filtrar por semestre y paralelo del estudiante aquí si tenemos su token
-  async getActiveEvaluations() {
-    const { data: evaluations, error: evalError } = await this.supabase
+  // Obtener la evaluación activa para el estudiante filtrada por semestre y paralelo
+  async getActiveEvaluations(userId?: string) {
+    let studentSemestre = null;
+    let studentParalelo = null;
+
+    if (userId && userId !== 'unknown') {
+      const { data: studentDetails } = await this.supabase
+        .from('detalles_estudiantes')
+        .select('semestre, paralelo')
+        .eq('usuario_id', userId)
+        .single();
+      
+      if (studentDetails) {
+        studentSemestre = studentDetails.semestre;
+        studentParalelo = studentDetails.paralelo;
+      }
+    }
+
+    let query = this.supabase
       .from('evaluations')
       .select('id, title, description, semestre, paralelo')
       .eq('is_active', true);
+
+    if (studentSemestre && studentParalelo) {
+      query = query
+        .eq('semestre', studentSemestre)
+        .eq('paralelo', studentParalelo);
+    }
+
+    const { data: evaluations, error: evalError } = await query;
 
     if (evalError) throw new Error(evalError.message);
 
@@ -67,10 +90,13 @@ export class EvaluationsService {
     for (const ev of evaluations) {
       const { data: questions, error: qError } = await this.supabase
         .from('evaluation_questions')
-        .select('id, question_text, image_url, options')
+        .select('id, question_text, image_url, options, correct_option_index')
         .eq('evaluation_id', ev.id);
       
       if (!qError) {
+        // En Unity `QuestionData` no tiene correct_option_index, pero en `ManagerEvaluacion` se 
+        // mapea con el index de options. Unity envía "a", "b", "c". 
+        // Asi que mandamos las preguntas completas.
         result.push({ ...ev, questions });
       }
     }

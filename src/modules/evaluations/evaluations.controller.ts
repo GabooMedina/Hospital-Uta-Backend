@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Req, UseGuards, HttpException, HttpStatus, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Req, UseGuards, HttpException, HttpStatus, Param, Query } from '@nestjs/common';
 import { EvaluationsService } from './evaluations.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
@@ -8,9 +8,9 @@ export class EvaluationsController {
 
   // Unity descarga la evaluación activa
   @Get('active')
-  async getActiveEvaluations() {
+  async getActiveEvaluations(@Query('user_id') userId: string) {
     try {
-      return await this.evaluationsService.getActiveEvaluations();
+      return await this.evaluationsService.getActiveEvaluations(userId);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
