@@ -89,7 +89,7 @@ export class EvaluationsService {
     if (error) throw new Error(error.message);
 
     // Determinar si están finalizadas
-    const result = [];
+    const result: any[] = [];
     for (const ev of evaluations) {
       // Contar estudiantes en ese semestre/paralelo
       const { count: totalStudents, error: stuError } = await this.supabase
@@ -189,10 +189,12 @@ export class EvaluationsService {
       .eq('evaluation_id', evaluationId)
       .order('id', { ascending: true }); // Peligroso si Unity no recibe en este orden.
 
+    const safeOrderedQuestions = orderedQuestions || [];
+
     answers.forEach(ans => {
       // Unity envia question_index (0, 1, 2...) y selected_option ("a", "b", "c")
       const qIndex = ans.question_index;
-      const qObj = orderedQuestions[qIndex];
+      const qObj = safeOrderedQuestions[qIndex];
       
       let selectedIndex = -1;
       if (ans.selected_option === 'a') selectedIndex = 0;
