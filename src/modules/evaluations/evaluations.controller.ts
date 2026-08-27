@@ -21,7 +21,7 @@ export class EvaluationsController {
   @Get('docente')
   async getEvaluationsByDocente(@Req() req: any) {
     try {
-      const userId = req.user.sub;
+      const userId = req.user.userId;
       return await this.evaluationsService.getEvaluationsByDocente(userId);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -44,7 +44,7 @@ export class EvaluationsController {
   @Post(':id/close')
   async closeEvaluation(@Param('id') id: string, @Req() req: any) {
     try {
-      const userId = req.user.sub;
+      const userId = req.user.userId;
       return await this.evaluationsService.closeEvaluation(id, userId);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -55,7 +55,7 @@ export class EvaluationsController {
   @Post('create')
   async createEvaluation(@Body() data: any, @Req() req: any) {
     try {
-      const userId = req.user.sub;
+      const userId = req.user.userId;
       return await this.evaluationsService.createEvaluation(data, userId);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

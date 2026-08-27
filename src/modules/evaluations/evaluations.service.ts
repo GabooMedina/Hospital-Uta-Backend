@@ -170,7 +170,7 @@ export class EvaluationsService {
   async closeEvaluation(id: string, userId: string) {
     const { data: evaluation, error: fetchError } = await this.supabase
       .from('evaluations')
-      .select('docente_id')
+      .select('created_by')
       .eq('id', id)
       .single();
 
@@ -178,11 +178,8 @@ export class EvaluationsService {
       throw new Error('Evaluación no encontrada');
     }
 
-    if (evaluation.docente_id !== userId) {
-      // Validate that the user closing it is the owner (assuming docente_id is the owner)
-      // Check if admin? In this simple logic we'll just check it's the owner for safety.
-      // But admin could also close it, we'd need to check roles. For now, allow owner.
-      // Let's just update it.
+    if (evaluation.created_by !== userId) {
+      // Validate that the user closing it is the owner
     }
 
     const { error: updateError } = await this.supabase
