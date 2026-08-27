@@ -122,14 +122,18 @@ export class EvaluationsService {
         .from('usuarios')
         .select('id', { count: 'exact', head: true })
         .eq('rol_id', 3)
-        .eq('estado', true); // Asumiendo que queremos los activos, o simplemente cruzando con detalles
+        .eq('estado', 'activo'); // Fix: estado is text, not boolean
+
+      if (stuError) {
+        console.error("Error fetching students count:", stuError);
+      }
 
       // Es más seguro consultar detalles_estudiantes y filtrar
       const { data: details, error: detError } = await this.supabase
         .from('detalles_estudiantes')
         .select('usuario_id')
-        .eq('semestre', ev.semestre)
-        .eq('paralelo', ev.paralelo);
+        .eq('semestre', ev.semestre || '')
+        .eq('paralelo', ev.paralelo || '');
       
       const totalInParallel = details ? details.length : 0;
 
