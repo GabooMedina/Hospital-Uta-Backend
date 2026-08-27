@@ -38,6 +38,18 @@ export class EvaluationsController {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
+  // Frontend (Docente/Admin) cierra manualmente una evaluación
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/close')
+  async closeEvaluation(@Param('id') id: string, @Req() req: any) {
+    try {
+      const userId = req.user.sub;
+      return await this.evaluationsService.closeEvaluation(id, userId);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
   // Frontend (Docente/Admin) crea una evaluación
   @UseGuards(JwtAuthGuard)
   @Post('create')
