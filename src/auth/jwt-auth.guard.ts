@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         cache: true,
         rateLimit: true,
         jwksRequestsPerMinute: 5,
-        jwksUri: `${process.env.SUPABASE_URL}/auth/v1/.well-known/jwks.json`,
+        jwksUri: `${process.env.SUPABASE_URL || 'https://mopgidgfaabvygiwdqvm.supabase.co'}/auth/v1/.well-known/jwks.json`,
       }),
       algorithms: ['ES256'], 
     });
